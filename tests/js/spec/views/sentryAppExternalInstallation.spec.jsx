@@ -1,7 +1,7 @@
-import React from 'react';
 import pick from 'lodash/pick';
 
 import {mountWithTheme} from 'sentry-test/enzyme';
+import {selectByValue} from 'sentry-test/select-new';
 
 import SentryAppExternalInstallation from 'app/views/sentryAppExternalInstallation';
 
@@ -100,8 +100,6 @@ describe('SentryAppExternalInstallation', () => {
         body: install,
       });
 
-      window.location.assign = jest.fn();
-
       wrapper = getMountedComponent();
       await tick();
       wrapper.update();
@@ -120,7 +118,7 @@ describe('SentryAppExternalInstallation', () => {
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://google.com/?code=${install.code}&installationId=${install.uuid}&orgSlug=${org1.slug}`
       );
-      window.location.assign.mockRestore();
+      window.location.assign.mockClear();
     });
   });
   describe('multiple organizations', () => {
@@ -137,8 +135,9 @@ describe('SentryAppExternalInstallation', () => {
       expect(getAppMock).toHaveBeenCalled();
       expect(getOrgsMock).toHaveBeenCalled();
       expect(wrapper.state('organization')).toBeNull();
-      expect(wrapper.find('.Select-multi-value-wrapper')).toHaveLength(1);
+      expect(wrapper.find('SelectControl')).toHaveLength(1);
     });
+
     it('selecting org from dropdown loads the org through the API', async () => {
       getOrgMock = MockApiClient.addMockResponse({
         url: `/organizations/${org2.slug}/`,
@@ -154,9 +153,7 @@ describe('SentryAppExternalInstallation', () => {
       await tick();
       wrapper.update();
 
-      const input = wrapper.find('input');
-      input.simulate('change', {target: {value: org2.slug}});
-      input.simulate('keyDown', {keyCode: 13}); //need to simulate keyDown so onChange is triggered
+      selectByValue(wrapper, 'org2', {control: true});
 
       await tick();
       wrapper.update();
